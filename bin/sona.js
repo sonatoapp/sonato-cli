@@ -142,12 +142,10 @@ async function main() {
     return command(args);
   }
 
-  // Validate the command before resolving a token, so an unknown command
-  // reports itself rather than "Not logged in" when no token is present.
-  const GROUPS = ['whoami', 'accounts', 'analytics', 'upload', 'seo', 'post'];
-  if (!GROUPS.includes(group)) throw usage(`Unknown command: ${group}`);
-
-  const ctx = resolve(args.values.profile);
+  // The routes are declared before a token is resolved so an unknown command
+  // reports itself rather than "Not logged in" when no token is present. Each
+  // entry is a thunk, so ctx is only read once one of them actually runs.
+  let ctx;
 
   const routes = {
     whoami: () => account.whoami(ctx, args),
@@ -171,6 +169,8 @@ async function main() {
 
   const route = routes[group];
   if (!route) throw usage(`Unknown command: ${group}`);
+
+  ctx = resolve(args.values.profile);
 
   return route();
 }
