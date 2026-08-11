@@ -17,8 +17,34 @@ const ACCOUNTS = [
 ];
 
 const POSTS = [
-  { id: 'post_0000001', status: 'published', network: 'telegram', type: 'media', caption: "Example caption", link: null, media: ['https://files.sona.to/files/a.png'], account: { id: 'acc_00000002', name: 'Example Group' }, scheduled_at: '2026-06-10T18:48:00+07:00', created_at: '2026-06-10T18:47:31+07:00', published_url: 'https://t.me/example' },
+  { id: 'post_0000001', status: 'published', network: 'telegram', type: 'media', caption: 'Example caption', link: null, media: ['https://files.sona.to/files/a.png'], account: { id: 'acc_00000002', name: 'Example Group' }, scheduled_at: '2026-06-10T18:48:00+07:00', created_at: '2026-06-10T18:47:31+07:00', published_url: 'https://t.me/example' },
   { id: 'post_0000002', status: 'scheduled', network: 'telegram', type: 'text', caption: 'status split test', link: null, media: [], account: { id: 'acc_00000002', name: 'Example Group' }, scheduled_at: '2026-08-23T16:26:58+07:00', created_at: '2026-07-24T16:27:03+07:00', published_url: null },
+];
+
+const PROJECTS = [
+  { id: 'seo_00000001', domain: 'example.com', audit_status: 'done', last_crawled_at: '2026-08-01T10:00:00+00:00', open_issues: 3, created_at: '2026-07-01T10:00:00+00:00' },
+];
+
+const PROJECT_DETAIL = {
+  id: 'seo_00000001',
+  domain: 'example.com',
+  audit_status: 'done',
+  last_crawled_at: '2026-08-01T10:00:00+00:00',
+  issues: {
+    open_by_severity: { high: 1, medium: 1, low: 1 },
+    by_status: { open: 3, applied: 2, dismissed: 1 },
+  },
+};
+
+const ISSUES = [
+  { id: 1, type: 'missing_title', severity: 'high', status: 'open', lane: 'content', quick_win: true, page_url: 'https://example.com/about' },
+  { id: 2, type: 'thin_content', severity: 'medium', status: 'open', lane: 'content', quick_win: false, page_url: 'https://example.com/blog' },
+  { id: 3, type: 'missing_schema', severity: 'low', status: 'applied', lane: 'technical', quick_win: false, page_url: 'https://example.com/' },
+];
+
+const PAGES = [
+  { url: 'https://example.com/', status_code: 200, word_count: 930, has_schema: true },
+  { url: 'https://example.com/pricing', status_code: 200, word_count: 412, has_schema: false },
 ];
 
 const err = (res, status, code, message) => {
@@ -99,6 +125,60 @@ export function start(port = 8123) {
           published_url: scheduled ? null : 'https://t.me/example',
         })),
       }, 201);
+    }
+
+    if (path === '/seo/projects' && req.method === 'GET') {
+      return ok(res, { data: PROJECTS, meta: { total: PROJECTS.length, limit: 50, offset: 0 } });
+    }
+
+    if (path === '/seo/projects' && req.method === 'POST') {
+      if (!payload.domain) {
+        return err(res, 422, 'invalid_parameter', 'The domain field is required.');
+      }
+      if (payload.domain === 'taken.com') {
+        return err(res, 409, 'conflict', 'This domain is already on this team.');
+      }
+      return ok(res, {
+        data: { id: 'seo_00000002', domain: payload.domain, audit_status: null, last_crawled_at: null, open_issues: 0, created_at: '2026-08-12T09:00:00+00:00' },
+      }, 201);
+    }
+
+    const auditMatch = path.match(/^\/seo\/projects\/([^/]+)\/audit$/);
+    if (auditMatch && req.method === 'POST') {
+      if (auditMatch[1] === 'gone') return err(res, 404, 'not_found', 'Project not found.');
+      return ok(res, { data: { id: auditMatch[1], audit_status: 'queued' } }, 202);
+    }
+
+    const fixMatch = path.match(/^\/seo\/projects\/([^/]+)\/issues\/([^/]+)\/fix$/);
+    if (fixMatch && req.method === 'POST') {
+      return ok(res, {
+        data: { fix_id: 42, issue_id: Number(fixMatch[2]), fix_type: 'title', before: '', after: 'About us | Example' },
+      }, 201);
+    }
+
+    const issuesMatch = path.match(/^\/seo\/projects\/([^/]+)\/issues$/);
+    if (issuesMatch) {
+      if (issuesMatch[1] === 'gone') return err(res, 404, 'not_found', 'Project not found.');
+      let rows = ISSUES;
+      const sev = url.searchParams.get('severity');
+      if (sev) rows = rows.filter((i) => i.severity === sev);
+      const st = url.searchParams.get('status');
+      if (st) rows = rows.filter((i) => i.status === st);
+      if (url.searchParams.get('quick_win') === 'true') rows = rows.filter((i) => i.quick_win);
+      const type = url.searchParams.get('type');
+      if (type) rows = rows.filter((i) => i.type === type);
+      return ok(res, { data: rows, meta: { total: ISSUES.length, limit: 50, offset: 0 } });
+    }
+
+    const pagesMatch = path.match(/^\/seo\/projects\/([^/]+)\/pages$/);
+    if (pagesMatch) {
+      return ok(res, { data: PAGES, meta: { total: PAGES.length, limit: 50, offset: 0 } });
+    }
+
+    const projectMatch = path.match(/^\/seo\/projects\/([^/]+)$/);
+    if (projectMatch && req.method === 'GET') {
+      if (projectMatch[1] === 'gone') return err(res, 404, 'not_found', 'Project not found.');
+      return ok(res, { data: PROJECT_DETAIL });
     }
 
     const am = path.match(/^\/analytics\/(.+)$/);

@@ -1,6 +1,6 @@
 {
   "name": "sonato-cli",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Command-line client for the sona.to API. Schedule posts, manage channels, run SEO audits.",
   "keywords": [
     "sona",
@@ -34,6 +34,6 @@
     "!**/*.bak.*"
   ],
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   }
 }
