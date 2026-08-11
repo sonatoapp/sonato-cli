@@ -1,0 +1,39 @@
+{
+  "name": "sonato-cli",
+  "version": "1.0.4",
+  "description": "Command-line client for the sona.to API. Schedule posts, manage channels, run SEO audits.",
+  "keywords": [
+    "sona",
+    "sonato",
+    "social",
+    "scheduling",
+    "seo",
+    "cli"
+  ],
+  "homepage": "https://developers.sona.to",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sonatoapp/sonato-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sonatoapp/sonato-cli/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "sona": "bin/sona.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE",
+    "!**/*.bak.*"
+  ],
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
